@@ -1,0 +1,3 @@
+= Arduino Stroboscope
+
+* I used this guide for driving OLED: http://www.instructables.com/id/Monochrome-096-i2c-OLED-display-with-arduino-SSD13/
