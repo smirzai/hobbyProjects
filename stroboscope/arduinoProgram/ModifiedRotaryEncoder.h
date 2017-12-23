@@ -108,6 +108,8 @@ long  ModifiedRotaryEncoder::getNonLinearPosition() {
 
 
 void  ModifiedRotaryEncoder::setNonLinearPosition(long n) {
+  if ((n > MAX) || (n < MIN))
+    n = MIN;
   nonLinearPosition = n;
 } 
 
@@ -137,13 +139,17 @@ void ModifiedRotaryEncoder::tick(void)
   int sig2 = digitalRead(_pin2);
   int8_t thisState = sig1 | (sig2 << 1);
 
+
   int old_position = _position;
   if (_oldState != thisState) {
     _position += KNOBDIR[thisState | (_oldState<<2)];
-     
+
+
     if (thisState == LATCHSTATE) {
+        
       int diff = (_position >> 2) - _positionExt;
       long new_value = nonLinearPosition + diff * step;
+       
       if ((new_value > MIN) && (new_value < MAX)) {
           nonLinearPosition = new_value;
          

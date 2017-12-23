@@ -109,6 +109,7 @@ int st = LOW;
 int st1 = LOW;
 
 void loop() {
+ // encoder.tick();
 
   int rs =  digitalRead(ROTARY_SWITCH_PIN);
   if ((rs != last_rotary_status) && (millis() - last_rotary_switch_ts > 200)) {
