@@ -20,8 +20,8 @@ All text above, and the splash screen must be included in any redistribution
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
-#include <RotaryEncoder.h>
+#include "ModifiedRotaryEncoder.h"
+#include <EEPROM.h>
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -31,7 +31,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define YPOS 1
 #define DELTAY 2
 
-
+#define ROTARY_SWITCH_PIN   4
+#define LED_PIN 13
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
 
@@ -40,8 +41,10 @@ Adafruit_SSD1306 display(OLED_RESET);
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
-int pos;
-RotaryEncoder encoder(2, 3);
+long pos;
+long eprom_timer;
+int eprom_dirty;
+ModifiedRotaryEncoder encoder(2, 3);
 
 
 void tickInterrupt() {
@@ -49,15 +52,29 @@ void tickInterrupt() {
 
 }
 
-void update_frequency(int f) {
+void update_frequency(long f) {
   
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
-  display.println(String(f));
-  display.display();
+
+  char buffer[10];
+  sprintf(buffer, "%05lu", f);
+  display.println(buffer);
+  int step = encoder.getStep();
+  int log = 5;
+  while (step > 0) {
+    step /= 10;
+    --log;
+  }
+  
+ 
+  display.drawLine(12 * log, 20, 12 * log + 10, 20, WHITE);
    
+  display.display();
+  
+
    
 }
 
@@ -68,23 +85,76 @@ void setup()   {
 
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
-  pos = 0; 
+
+  long eprom_value = EEPROM.read(0) + (((long) EEPROM.read(1)) << 8);
   
+
+  encoder.setNonLinearPosition(eprom_value);
+  
+
+
+  pinMode(ROTARY_SWITCH_PIN, INPUT_PULLUP);
+
+  pinMode(LED_PIN, OUTPUT);
+  eprom_timer = millis();
+  eprom_dirty = 0;
+ 
+   
 
 }
 
+int last_rotary_switch_ts = 0;
+int last_rotary_status = LOW;
+int st = LOW;
+int st1 = LOW;
 
 void loop() {
- 
+
+  int rs =  digitalRead(ROTARY_SWITCH_PIN);
+  if ((rs != last_rotary_status) && (millis() - last_rotary_switch_ts > 200)) {
+    last_rotary_switch_ts = millis();
+    last_rotary_status = rs;
+    
+    st = !st;
+    if (st) { // rotary switch pressed
+     
+      encoder.tickSwitch();
+      update_frequency(pos);
+      
   
-  int newPos = encoder.getPosition();
+
+    }
+    
+    
+  }
+  
+  long newPos = encoder.getNonLinearPosition();
+  
+ 
+ if (eprom_dirty && (millis() > eprom_timer + 1000)) {
+   eprom_timer = millis();
+   st1 = !st1;
+   digitalWrite(LED_PIN, st1);
+    
+   
+    eprom_dirty = 0;
+
+    EEPROM.write(0, pos & 0xFF);
+    EEPROM.write(1, pos >> 8);
+    
+ }
+ 
   if (pos != newPos) {
-    Serial.print(newPos);
-    Serial.println();
+   
     update_frequency(newPos);
     pos = newPos;
+    eprom_dirty = 1;
+    eprom_timer = millis();
+   
+  } 
 
-  } // if
+ 
+    
   
 }
 
