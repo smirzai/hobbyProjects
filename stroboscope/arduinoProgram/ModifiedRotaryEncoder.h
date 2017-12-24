@@ -15,7 +15,7 @@
 
 #define LATCHSTATE 3
 #define MAX 50000
-#define MIN 50
+#define MIN 0
 
 class ModifiedRotaryEncoder
 {

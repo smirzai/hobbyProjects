@@ -73,6 +73,8 @@ void update_frequency(long f) {
   display.drawLine(12 * log, 20, 12 * log + 10, 20, WHITE);
    
   display.display();
+
+  setPwm(f) ;
   
 
    
@@ -107,6 +109,41 @@ int last_rotary_switch_ts = 0;
 int last_rotary_status = LOW;
 int st = LOW;
 int st1 = LOW;
+
+
+void setPwm(long f) {
+ TCCR1A =   _BV(COM1B1) | _BV(WGM10);  // PWM, Phase and Frequency Correct, Non Inverting
+  
+ 
+   
+  DDRB |= _BV(PB1) | _BV(PB2); 
+ 
+ long prescales[] = {1L, 8L, 64L, 256L, 1024L};
+
+  int prescale = 0;
+  long top;
+  while (1) {
+    top = 16000000 / (2L * prescales[prescale] * (long) f);
+    Serial.println(top);
+    if (top < 65536)
+      break;
+    prescale++;
+    if (prescale >= 5) {
+      break;
+    }
+  }; 
+  Serial.println("prescaler:");
+  Serial.println(prescales[prescale]);
+  Serial.println("number:");
+  Serial.println(prescale);
+  Serial.println(_BV(CS12));
+  TCCR1B =   (prescale + 1)| _BV(WGM13);  // no prescaling
+  OCR1A = top;
+  OCR1B = top / 2;
+  
+  
+  
+}
 
 void loop() {
  // encoder.tick();
