@@ -139,7 +139,7 @@ void setPwm(long f) {
   Serial.println(_BV(CS12));
   TCCR1B =   (prescale + 1)| _BV(WGM13);  // no prescaling
   OCR1A = top;
-  OCR1B = top / 2;
+  OCR1B = 40 / prescales[prescale]; // 5 us width
   
   
   
