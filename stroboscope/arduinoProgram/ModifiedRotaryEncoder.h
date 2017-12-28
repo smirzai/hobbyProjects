@@ -37,6 +37,9 @@ public:
 
   void setNonLinearPosition(long n);
 
+  void dbl();
+  void half();
+
   // call this function every some milliseconds or by using an interrupt for handling state changes of the rotary encoder.
   void tick(void);
 
@@ -108,14 +111,27 @@ long  ModifiedRotaryEncoder::getNonLinearPosition() {
 
 
 void  ModifiedRotaryEncoder::setNonLinearPosition(long n) {
-  if ((n > MAX) || (n < MIN))
-    n = MIN;
-  nonLinearPosition = n;
+  if ((n > MAX))
+    n = MAX;
+  else if (n < MIN)
+      n = MIN;
+    else 
+      nonLinearPosition = n;
 } 
 
 long  ModifiedRotaryEncoder::getStep() {
   return step;
 }
+
+void ModifiedRotaryEncoder::dbl() {
+  setNonLinearPosition(2 * nonLinearPosition);
+  
+}
+
+void ModifiedRotaryEncoder::half() {
+  setNonLinearPosition( nonLinearPosition / 2);
+}
+
 
 
 void  ModifiedRotaryEncoder::tickSwitch() {

@@ -36,6 +36,11 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
 
+#define DOUBLE_PIN 5
+#define HALF_PIN 6
+
+#define DEBOUNCE_TIME 100
+
 
 #if (SSD1306_LCDHEIGHT != 32)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
@@ -85,24 +90,23 @@ void setup()   {
   attachInterrupt(digitalPinToInterrupt(2), tickInterrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(3), tickInterrupt, CHANGE);
 
-
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
 
   long eprom_value = EEPROM.read(0) + (((long) EEPROM.read(1)) << 8);
-  
-
+ 
   encoder.setNonLinearPosition(eprom_value);
-  
-
-
+ 
   pinMode(ROTARY_SWITCH_PIN, INPUT_PULLUP);
 
   pinMode(LED_PIN, OUTPUT);
+  pinMode(DOUBLE_PIN, INPUT);
+  pinMode(HALF_PIN, INPUT);
+  digitalWrite(DOUBLE_PIN, HIGH);
+  digitalWrite(HALF_PIN, HIGH);
+ 
   eprom_timer = millis();
   eprom_dirty = 0;
  
-   
-
 }
 
 int last_rotary_switch_ts = 0;
@@ -112,9 +116,7 @@ int st1 = LOW;
 
 
 void setPwm(long f) {
- TCCR1A =   _BV(COM1B1) | _BV(WGM10);  // PWM, Phase and Frequency Correct, Non Inverting
-  
- 
+  TCCR1A =   _BV(COM1B1) | _BV(WGM10);  // PWM, Phase and Frequency Correct, Non Inverting
    
   DDRB |= _BV(PB1) | _BV(PB2); 
  
@@ -124,7 +126,6 @@ void setPwm(long f) {
   long top;
   while (1) {
     top = 16000000 / (2L * prescales[prescale] * (long) f);
-    Serial.println(top);
     if (top < 65536)
       break;
     prescale++;
@@ -132,19 +133,19 @@ void setPwm(long f) {
       break;
     }
   }; 
-  Serial.println("prescaler:");
-  Serial.println(prescales[prescale]);
-  Serial.println("number:");
-  Serial.println(prescale);
-  Serial.println(_BV(CS12));
+ 
   TCCR1B =   (prescale + 1)| _BV(WGM13);  // no prescaling
   OCR1A = top;
   //  OCR1B = OCR1A / 2;
   OCR1B = 50/ prescales[prescale]; // 5 us width
-  
-  
-  
+
 }
+
+long dobounce_double = 0;
+long debounce_half = 0;
+int last_double = HIGH;
+int last_half = HIGH;
+
 
 void loop() {
  // encoder.tick();
@@ -156,15 +157,9 @@ void loop() {
     
     st = !st;
     if (st) { // rotary switch pressed
-     
       encoder.tickSwitch();
       update_frequency(pos);
-      
-  
-
     }
-    
-    
   }
   
   long newPos = encoder.getNonLinearPosition();
@@ -190,7 +185,34 @@ void loop() {
     eprom_dirty = 1;
     eprom_timer = millis();
    
-  } 
+  }
+
+  if (digitalRead(DOUBLE_PIN) != last_double) {    
+    
+
+    
+    if (millis() - dobounce_double > DEBOUNCE_TIME) {
+      if (last_double)
+          encoder.dbl(); 
+      last_double = !last_double;;
+      dobounce_double = millis();
+      digitalRead(DOUBLE_PIN);
+    }
+  } else
+    dobounce_double = millis();
+    
+  if (digitalRead(HALF_PIN) != last_half) {    
+    if (millis() - debounce_half > DEBOUNCE_TIME) {
+      if (last_half)
+          encoder.half(); 
+      last_half = !last_half;
+      debounce_half = millis();
+    }
+  } else
+    debounce_half = millis();
+  
+
+   
 
  
     
