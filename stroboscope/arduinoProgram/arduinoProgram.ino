@@ -53,12 +53,13 @@ ModifiedRotaryEncoder encoder(2, 3);
 
 
 void tickInterrupt() {
+ 
   encoder.tick(); // just call tick() to check the state.
-
+  Serial.println(encoder.getNonLinearPosition());
 }
 
 void update_frequency(long f) {
-  
+   
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
@@ -135,9 +136,14 @@ void setPwm(long f) {
   }; 
  
   TCCR1B =   (prescale + 1)| _BV(WGM13);  // no prescaling
+  Serial.println(top);
   OCR1A = top;
   //  OCR1B = OCR1A / 2;
-  OCR1B = 50/ prescales[prescale]; // 5 us width
+  long width = top / 70;
+  Serial.println(width);
+  Serial.println();
+ 
+  OCR1B = width;
 
 }
 
@@ -149,7 +155,7 @@ int last_half = HIGH;
 
 void loop() {
  // encoder.tick();
-
+ 
   int rs =  digitalRead(ROTARY_SWITCH_PIN);
   if ((rs != last_rotary_status) && (millis() - last_rotary_switch_ts > 200)) {
     last_rotary_switch_ts = millis();
