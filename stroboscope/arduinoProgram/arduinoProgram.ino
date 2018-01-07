@@ -49,7 +49,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 long pos;
 long eprom_timer;
 int eprom_dirty;
-ModifiedRotaryEncoder encoder(2, 3);
+ModifiedRotaryEncoder encoder(3, 2);
 
 
 void tickInterrupt() {
