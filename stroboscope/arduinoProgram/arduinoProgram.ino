@@ -17,7 +17,7 @@ All text above, and the splash screen must be included in any redistribution
 *********************************************************************/
 
 #include <SPI.h>
-#include <Wire.h>
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "ModifiedRotaryEncoder.h"
@@ -55,7 +55,7 @@ ModifiedRotaryEncoder encoder(2, 3);
 void tickInterrupt() {
  
   encoder.tick(); // just call tick() to check the state.
-  Serial.println(encoder.getNonLinearPosition());
+ 
 }
 
 void update_frequency(long f) {
@@ -63,6 +63,7 @@ void update_frequency(long f) {
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
+  display.setRotation(2);
   display.setCursor(0,0);
 
   char buffer[10];
@@ -87,7 +88,6 @@ void update_frequency(long f) {
 }
 
 void setup()   {                
-  Serial.begin(9600);
   attachInterrupt(digitalPinToInterrupt(2), tickInterrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(3), tickInterrupt, CHANGE);
 
@@ -136,12 +136,9 @@ void setPwm(long f) {
   }; 
  
   TCCR1B =   (prescale + 1)| _BV(WGM13);  // no prescaling
-  Serial.println(top);
   OCR1A = top;
   //  OCR1B = OCR1A / 2;
   long width = top / 70;
-  Serial.println(width);
-  Serial.println();
  
   OCR1B = width;
 
